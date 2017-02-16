@@ -1,8 +1,12 @@
 from distutils.core import setup
-from Cython.Build import cythonize
-from distutils.extension import Extension
 
 setup(
-    ext_modules = cythonize(["quadedge.pyx", "triangulation.pyx"]
-    )
+    name='GridToTIN',
+    version='0.1',
+    packages=['grid2tin'],
+    url='',
+    license='MIT',
+    author='Ulrich Meier',
+    author_email='ulrich.meier@ldbv.bayern.de',
+    description=''
 )

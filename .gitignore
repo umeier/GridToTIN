@@ -55,3 +55,5 @@ docs/_build/
 
 # PyBuilder
 target/
+.idea/
+/test/data/dgm1.img.aux.xml

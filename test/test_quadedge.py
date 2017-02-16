@@ -1,6 +1,6 @@
 import unittest
 
-import quadedge as qe
+from grid2tin import quadedge as qe
 
 
 class TestQuadedge(unittest.TestCase):
@@ -10,7 +10,6 @@ class TestQuadedge(unittest.TestCase):
 
         self.assertIs(e, q.edges[0])
         self.assertIsNot(e, e.rot)
-        self.assertIs(e._rot, e.rot)
         self.assertIs(e, e.rot.rot.rot.rot)
         self.assertIs(e.rot.rot.rot, e.inv_rot)
 
@@ -44,8 +43,3 @@ class TestQuadedge(unittest.TestCase):
 
         self.assertIs(e0.l_next, e0.sym)
         self.assertIs(e0.l_prev, e1.sym)
-
-
-
-if __name__ == '__main__':
-    unittest.main()
