@@ -7,11 +7,11 @@ from math import floor, ceil
 
 import numpy as np
 import rasterio
-from heap import Heap
+from .heap import Heap
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import Polygon
 
-from grid2tin.quadedge import Vertex, splice, connect, swap, make_edge, Triangle
+from .quadedge import Vertex, splice, connect, swap, make_edge, Triangle
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -552,6 +552,7 @@ class Triangulation:
             triangle.id = self.heap.insert(triangle.candidate_error,
                                            (triangle.candidate, triangle))
         self.triangle_list.extend(new)
+        return error, len(self.vertex_dict)
 
     def split_edge(self, e):
         """

@@ -1,11 +1,23 @@
 import os
 import unittest
 
-from triangulation import Triangulation
+from grid2tin.triangulation import Triangulation
 
 
-class TestTriangulation(unittest.TestCase):
-    def test_raster(self):
-        path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data/dgm1.img')
-        tri = Triangulation(path)
-        tri.insert_next()
+class TestTriangulationRaster(unittest.TestCase):
+    def setUp(self):
+        self.path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data/dgm1.tif')
+
+    def test_limits(self):
+        tri = Triangulation(self.path)
+        error = None
+        vertex_count = None
+        repeat = True
+        vertex_limit = 4000
+        error_limit = 1.0
+        while repeat:
+            error, vertex_count = tri.insert_next()
+            if vertex_count >= vertex_limit or error <= error_limit:
+                repeat = False
+        self.assertGreaterEqual(error, error_limit)
+        self.assertLessEqual(vertex_count, vertex_limit)
