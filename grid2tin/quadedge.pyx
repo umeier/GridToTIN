@@ -5,6 +5,7 @@ import math
 import sys
 from numbers import Number
 
+cimport numpy as np
 import numpy as np
 
 eps = 1e-6
@@ -152,24 +153,20 @@ def splice(a, b):
     alpha.next = t3
     beta.next = t4
 
-
 def connect(a, b):
     e = QuadEdge(a.destination, b.origin).base
     splice(e, a.l_next)
     splice(e.sym, b)
     return e
 
-
 def make_edge(origin, destination):
     e = QuadEdge(origin, destination).base
     return e
-
 
 def delete_edge(e):
     splice(e, e.o_prev)
     splice(e.sym, e.sym.o_prev)
     del e
-
 
 def swap(e):
     a = e.o_prev
@@ -180,7 +177,6 @@ def swap(e):
     splice(e.sym, b.l_next)
     e.origin = a.destination
     e.destination = b.destination
-
 
 def make_triangle(v0, v1, v2):
     e0 = make_edge(v0, v1)
@@ -485,10 +481,8 @@ class Triangle:
 def triangle_area(v0, v1, v2):
     return (v1.x - v0.x) * (v2.y - v0.y) - (v1.y - v0.y) * (v2.x - v0.x)
 
-
 def ccw(v0, v1, v2):
     return triangle_area(v0, v1, v2) > 0
-
 
 def edge_ring(e):
     coord_list = []

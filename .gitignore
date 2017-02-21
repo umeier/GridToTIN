@@ -57,3 +57,4 @@ docs/_build/
 target/
 .idea/
 /test/data/dgm1.img.aux.xml
+*.c

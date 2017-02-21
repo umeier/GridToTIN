@@ -5,12 +5,13 @@
 import logging
 from math import floor, ceil
 
+cimport numpy as np
 import numpy as np
 import rasterio
-from .heap import Heap
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import Polygon
 
+from .heap import Heap
 from .quadedge import Vertex, splice, connect, swap, make_edge, Triangle
 
 logging.basicConfig(level=logging.DEBUG)
@@ -324,8 +325,9 @@ class Triangulation:
                 edge = edge.o_next
 
         while (not 0 < (
-            (vertex - edge.origin) * (edge.destination - edge.origin)) / edge.length ** 2 < 1) or not vertex.left_of(
-                edge):
+                    (vertex - edge.origin) * (
+                    edge.destination - edge.origin)) / edge.length ** 2 < 1) or not vertex.left_of(
+            edge):
             edge = edge.l_next
 
     def scan_triangle(self, t, interpolation_map=None, only_return_points=False):
