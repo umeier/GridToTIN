@@ -1,5 +1,5 @@
 from distutils.core import setup
-
+import numpy as np
 from Cython.Build import cythonize
 
 setup(
@@ -11,5 +11,6 @@ setup(
     author='Ulrich Meier',
     author_email='ulrich.meier@ldbv.bayern.de',
     description='',
-    ext_modules = cythonize("grid2tin/*.pyx")
+    ext_modules = cythonize("grid2tin/*.pyx"),
+    include_path = [np.get_include()]
 )
