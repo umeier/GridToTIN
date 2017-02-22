@@ -9,6 +9,8 @@ addons:
   apt:
     packages:
       - libgdal-dev
+      - python-dev
+      - build-essential
 
 install:
   - "pip install --upgrade pip setuptools wheel"
