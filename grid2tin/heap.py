@@ -29,18 +29,18 @@ class Heap:
         return self.keys[self.pq[1]], self.elements[self.pq[1]]
 
     def del_max(self):
-        max = self.pq[1]
+        maximum = self.pq[1]
         self.exchange(1, self.N)
         self.pq.pop()
         self.N -= 1
 
         self.sink(1)
-        self.qp[max] = -1
+        self.qp[maximum] = -1
 
     def pop(self):
-        max = self.max()
+        maximum = self.max()
         self.del_max()
-        return max
+        return maximum
 
     def dump(self):
         print(zip([self.keys[self.pq[i]] for i in range(1, self.N + 1)],

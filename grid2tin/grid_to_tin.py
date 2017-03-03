@@ -78,6 +78,7 @@ usemtl material0\n
             outfile.write(bytes(template.format(**context), 'UTF-8'))
             np.savetxt(outfile, coordinates, fmt="v %.3f %.3f %.3f")
             np.savetxt(outfile, texture_coordinates, fmt="vt %.3f %.3f")
+            # noinspection PyTypeChecker
             np.savetxt(outfile,
                        np.dstack([triangles, triangles]).reshape(-1, 6) + 1,
                        fmt="f %i/%i/ %i/%i/ %i/%i/")

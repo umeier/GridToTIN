@@ -5,7 +5,6 @@
 import logging
 from math import floor, ceil
 
-cimport numpy as np
 import numpy as np
 import rasterio
 from matplotlib.collections import PatchCollection
@@ -325,9 +324,8 @@ class Triangulation:
                 edge = edge.o_next
 
         while (not 0 < (
-                    (vertex - edge.origin) * (
-                    edge.destination - edge.origin)) / edge.length ** 2 < 1) or not vertex.left_of(
-            edge):
+            (vertex - edge.origin) * (edge.destination - edge.origin)) / edge.length ** 2 < 1) or not vertex.left_of(
+                edge):
             edge = edge.l_next
 
     def scan_triangle(self, t, interpolation_map=None, only_return_points=False):
@@ -392,16 +390,20 @@ class Triangulation:
         x_start = int(ceil(min(x_a, x_b)))
         x_end = int(floor(max(x_a, x_b)))
 
+        interpolate = t.interpolate
+        available = self.available
+        dem = self.dem
+
         points = []
         for x in range(x_start, x_end + 1):
             if only_return_points:
                 points.append((x, y))
             else:
-                z_map = self.dem[y, x]
-                error = abs(z_map - t.interpolate(x, y))
+                z_map = dem[y, x]
+                error = abs(z_map - interpolate([x, y]))
                 if interpolation_map is not None:
-                    interpolation_map[y, x] = t.interpolate(x, y)
-                if error > t.candidate_error and self.available[y, x] == 1:
+                    interpolation_map[y, x] = interpolate([x, y])
+                if error > t.candidate_error and available[y, x] == 1:
                     t.candidate_error = error
                     t.candidate.pos = (x, y, z_map)
         return points
@@ -431,7 +433,7 @@ class Triangulation:
 
             if self.available[y, x] == 1:
                 z_map = self.dem[y, x]
-                interpolation = e.triangle.interpolate(x, y)
+                interpolation = e.triangle.interpolate([x, y])
                 error = abs(interpolation - z_map)
                 if error > max_error:
                     max_error = error
@@ -500,7 +502,7 @@ class Triangulation:
                     triangle = self.search(center).triangle
 
                     z_map = self.dem[y, x]
-                    interpolation = triangle.interpolate(x, y)
+                    interpolation = triangle.interpolate([x, y])
                     error = abs(interpolation - z_map)
                     if error > max_error:
                         max_error = error
@@ -568,6 +570,7 @@ class Triangulation:
         new_v.z = 0
         if new_v.right_of(e):
             e = e.sym
+        # noinspection PyTypeChecker
         self.insert_point(new_v, e)
 
     def worst_encroached_edge(self):

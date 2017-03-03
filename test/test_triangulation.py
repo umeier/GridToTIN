@@ -10,8 +10,6 @@ class TestTriangulationRaster(unittest.TestCase):
 
     def test_limits(self):
         tri = Triangulation(self.path)
-        error = None
-        vertex_count = None
         repeat = True
         vertex_limit = 4000
         error_limit = 1.0
@@ -19,3 +17,4 @@ class TestTriangulationRaster(unittest.TestCase):
             error, vertex_count = tri.insert_next()
             if vertex_count >= vertex_limit or error <= error_limit:
                 repeat = False
+        self.assertLessEqual(vertex_count, vertex_limit)
