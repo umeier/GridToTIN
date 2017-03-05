@@ -1,12 +1,16 @@
 # Quadedge implementation based on Lischinski's code published in
 # Graphics Gems IV: https://github.com/erich666/GraphicsGems/tree/master/gemsiv/delaunay
 
+import logging
 import math
 import sys
 from numbers import Number
 
-import logging
 import numpy as np
+import pyximport
+
+pyximport.install()
+from .calculation import calc_interpolation
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -349,9 +353,11 @@ class Triangle:
         self.b = (u.x * v.z - u.z * v.x) / den
         self.c = self.vertices[0].z - self.a * self.vertices[0].x - self.b * self.vertices[0].y
 
-    def interpolate(self, xy):
-        # TODO: this is the second most time consuming part of the triangulation.
-        return self.a * xy[0] + self.b * xy[1] + self.c
+    def interpolate(self, x, y):
+        a = self.a
+        b = self.b
+        c = self.c
+        return calc_interpolation(a, b, c, x, y)
 
     def circumcenter(self, triangulation=None, within_triangulation=False):
         v0 = self.anchor.destination - self.anchor.origin
