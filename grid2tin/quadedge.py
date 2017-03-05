@@ -5,7 +5,10 @@ import math
 import sys
 from numbers import Number
 
+import logging
 import numpy as np
+
+logging.basicConfig(level=logging.DEBUG)
 
 eps = 1e-6
 float_min = -sys.float_info.max
@@ -347,6 +350,7 @@ class Triangle:
         self.c = self.vertices[0].z - self.a * self.vertices[0].x - self.b * self.vertices[0].y
 
     def interpolate(self, xy):
+        # TODO: this is the second most time consuming part of the triangulation.
         return self.a * xy[0] + self.b * xy[1] + self.c
 
     def circumcenter(self, triangulation=None, within_triangulation=False):

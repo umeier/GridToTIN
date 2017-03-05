@@ -13,6 +13,7 @@ class TestTriangulationRaster(unittest.TestCase):
         repeat = True
         vertex_limit = 4000
         error_limit = 1.0
+        vertex_count = None
         while repeat:
             error, vertex_count = tri.insert_next()
             if vertex_count >= vertex_limit or error <= error_limit:

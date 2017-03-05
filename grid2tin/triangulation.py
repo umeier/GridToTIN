@@ -181,6 +181,7 @@ class Triangulation:
             if not current_triangle == triangle:
                 # None of the children contained the point, point is not in
                 # triangulation
+                logging.debug("Point {} not in triangulation, no edge fount.".format(v))
                 return None
         return current_triangle.anchor
 
@@ -387,6 +388,7 @@ class Triangulation:
 
     def scan_triangle_line(self, t, y, x_a, x_b, interpolation_map=None,
                            only_return_points=False):
+        # TODO: this is the most time consuming part of the triangulation.
         x_start = int(ceil(min(x_a, x_b)))
         x_end = int(floor(max(x_a, x_b)))
 
@@ -614,10 +616,14 @@ class Triangulation:
             if worst_edge is None:
                 break
             else:
-                logging.debug("Splitting edge {}".format(worst_edge))
                 s0, s1 = worst_edge.selection_segment(v)
                 split = self.scan_segment(worst_edge, s0, s1)
-                self.insert_point(split)
+                if split:
+                    logging.debug("Splitting edge {}".format(worst_edge))
+                    self.insert_point(split)
+                else:
+                    logging.debug("Edge {} not splitted: no point found.".format(worst_edge))
+                    break
 
     def interpolated_map(self):
         """
