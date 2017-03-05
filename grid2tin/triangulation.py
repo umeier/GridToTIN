@@ -3,7 +3,7 @@
 
 
 import logging
-from math import floor, ceil
+from math import ceil
 
 import numpy as np
 import pyximport
@@ -15,7 +15,8 @@ from .heap import Heap
 from .quadedge import Vertex, splice, connect, swap, make_edge, Triangle
 
 pyximport.install()
-from .calculation import calc_interpolation
+# noinspection PyPep8
+from .calculation import scan_triangle_line
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -330,8 +331,7 @@ class Triangulation:
 
         while (not 0 < (
                     (vertex - edge.origin) * (
-                    edge.destination - edge.origin)) / edge.length ** 2 < 1) or not vertex.left_of(
-            edge):
+                            edge.destination - edge.origin)) / edge.length ** 2 < 1) or not vertex.left_of(edge):
             edge = edge.l_next
 
     def scan_triangle(self, t, interpolation_map=None, only_return_points=False):
@@ -361,10 +361,10 @@ class Triangulation:
         points = []
         # If the base of the triangle is flat, this loop won't be executed
         for y in range(y_start, y_end):
-            points.extend(self.scan_triangle_line(t, y,
-                                                  x_a, x_b,
-                                                  interpolation_map,
-                                                  only_return_points))
+            points.extend(scan_triangle_line(self.available, self.dem, t, y,
+                                             x_a, x_b,
+                                             interpolation_map,
+                                             only_return_points))
             x_a += dx0
             x_b += dx1
 
@@ -381,41 +381,15 @@ class Triangulation:
 
         # If the top of the triangle is flat, this loop will be executed once
         for y in range(y_start, y_end + 1):
-            points.extend(self.scan_triangle_line(t, y,
-                                                  x_a, x_b,
-                                                  interpolation_map,
-                                                  only_return_points))
+            points.extend(scan_triangle_line(self.available, self.dem, t, y,
+                                             x_a, x_b,
+                                             interpolation_map,
+                                             only_return_points))
             x_a += dx0
             x_b += dx1
 
         if only_return_points:
             return points
-
-    def scan_triangle_line(self, t, y, x_a, x_b, interpolation_map=None,
-                           only_return_points=False):
-        # TODO: this is the most time consuming part of the triangulation.
-        x_start = int(ceil(min(x_a, x_b)))
-        x_end = int(floor(max(x_a, x_b)))
-
-        available = self.available
-        dem = self.dem
-        a = t.a
-        b = t.b
-        c = t.c
-
-        points = []
-        for x in range(x_start, x_end + 1):
-            if only_return_points:
-                points.append((x, y))
-            else:
-                z_map = dem[y, x]
-                error = abs(z_map - calc_interpolation(a, b, c, x, y))
-                if interpolation_map is not None:
-                    interpolation_map[y, x] = calc_interpolation(a, b, c, x, y)
-                if error > t.candidate_error and available[y, x] == 1:
-                    t.candidate_error = error
-                    t.candidate.pos = (x, y, z_map)
-        return points
 
     def scan_segment(self, e, s0, s1):
         """
@@ -437,7 +411,9 @@ class Triangulation:
 
         for i in range(d):
             v = s0 + i * step * a
+            # noinspection PyUnresolvedReferences
             x = int(round(v.x))
+            # noinspection PyUnresolvedReferences
             y = int(round(v.y))
 
             if self.available[y, x] == 1:
@@ -479,7 +455,9 @@ class Triangulation:
 
         for i in range(d):
             v = s0 + i * step * a
+            # noinspection PyUnresolvedReferences
             x = int(round(v.x))
+            # noinspection PyUnresolvedReferences
             y = int(round(v.y))
             segment_points.append((x, y))
         return segment_points

@@ -10,6 +10,7 @@ import numpy as np
 import pyximport
 
 pyximport.install()
+# noinspection PyPep8
 from .calculation import calc_interpolation
 
 logging.basicConfig(level=logging.DEBUG)

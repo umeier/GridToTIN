@@ -2,7 +2,6 @@ import os
 import unittest
 
 import numpy as np
-import rasterio
 
 from grid2tin.quadedge import Vertex
 from grid2tin.triangulation import Triangulation
@@ -26,11 +25,11 @@ class TestTriangulationRaster(unittest.TestCase):
         """
         x = np.linspace(-4.0, 4.0, 240)
         y = np.linspace(-3.0, 3.0, 180)
-        X, Y = np.meshgrid(x, y)
-        Z1 = np.exp(-2 * np.log(2) * ((X - 0.5) ** 2 + (Y - 0.5) ** 2) / 1 ** 2)
-        Z2 = np.exp(-3 * np.log(2) * ((X + 0.5) ** 2 + (Y + 0.5) ** 2) / 2.5 ** 2)
-        Z = 10.0 * (Z2 - Z1)
-        tri = Triangulation(Z)
+        mx, my = np.meshgrid(x, y)
+        z1 = np.exp(-2 * np.log(2) * ((mx - 0.5) ** 2 + (my - 0.5) ** 2) / 1 ** 2)
+        z2 = np.exp(-3 * np.log(2) * ((mx + 0.5) ** 2 + (my + 0.5) ** 2) / 2.5 ** 2)
+        z = 10.0 * (z2 - z1)
+        tri = Triangulation(z)
         self.do_triangulation(tri)
 
     def test_triag_force_points_edges(self):
