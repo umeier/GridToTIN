@@ -13,7 +13,7 @@ pyximport.install()
 # noinspection PyPep8
 from .calculation import calc_interpolation
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.WARN)
 
 eps = 1e-6
 float_min = -sys.float_info.max

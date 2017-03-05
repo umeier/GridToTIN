@@ -3,13 +3,12 @@
 
 
 import logging
+import sys
 from math import ceil
 
 import numpy as np
 import pyximport
 import rasterio
-from matplotlib.collections import PatchCollection
-from matplotlib.patches import Polygon
 
 from .heap import Heap
 from .quadedge import Vertex, splice, connect, swap, make_edge, Triangle
@@ -18,17 +17,19 @@ pyximport.install()
 # noinspection PyPep8
 from .calculation import scan_triangle_line
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.WARN)
 
 
 class Triangulation:
     def __init__(self, dem, minimum_gap=5):
         if isinstance(dem, np.ndarray):
             self.dem = dem
+            self.affine = None
         elif isinstance(dem, str):
             with rasterio.Env():
                 with rasterio.open(dem) as src:
                     rawdata = src.read()
+                    self.affine = src.affine
                     self.dem = np.array(rawdata.squeeze(), dtype=float)
 
         self.minimum_gap = minimum_gap
@@ -135,12 +136,6 @@ class Triangulation:
     @property
     def triangles(self):
         return list(filter(lambda x: x.id != -1, self.triangle_list))
-
-    def triangle_patches(self, **kwargs):
-        return PatchCollection([
-                                   Polygon([v.pos[:2] for v in t.vertices])
-                                   for t in self.triangles
-                                   ], **kwargs)
 
     @property
     def edge_lines(self):
@@ -714,3 +709,16 @@ class Triangulation:
                 boundary_edges.append(e.sym)
 
         return boundary_edges
+
+    def write_obj(self, filename, affine=True):
+        if affine and self.affine:
+            coordinates = np.array([self.affine * v.pos[:2] + tuple([v.pos[2]]) for v in self.vertices])
+            v_fmt = "v %.3f %.3f %.3f"
+        else:
+            coordinates = [v.pos for v in self.vertices]
+            v_fmt = "v %i %i %.2f"
+        triangles = [[self.vertices.index(vertex) for vertex in triangle.vertices][::-1] for triangle in self.triangles]
+
+        with open(filename, 'wb') as outfile:
+            np.savetxt(outfile, coordinates, fmt=v_fmt)
+            np.savetxt(outfile, triangles, fmt="f %i %i %i")

@@ -10,6 +10,7 @@ from grid2tin.triangulation import Triangulation
 class TestTriangulationRaster(unittest.TestCase):
     def setUp(self):
         self.path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data/dgm5.tif')
+        self.grid = np.array([[0, 0, 1], [0, 0, 0], [1, 0, 0]], np.int32)
 
     def test_triag_file_gap(self):
         tri = Triangulation(self.path)
@@ -44,9 +45,23 @@ class TestTriangulationRaster(unittest.TestCase):
             tri.insert_point(Vertex(tri.max_x, int(y)))
         self.do_triangulation(tri)
 
-    def do_triangulation(self, tri):
+    def test_insert_point_out_of_grid(self):
+        tri = Triangulation(self.path, minimum_gap=0)
+        with self.assertRaises(IndexError):
+            tri.insert_point(Vertex(tri.max_y + 1, tri.max_y + 1))
+
+    def test_write_obj_minimal_grid(self):
+        tri = Triangulation(self.grid, minimum_gap=0)
+        tri.write_obj('grid.obj')
+
+    def test_write_obj(self):
+        tri = Triangulation(self.path, minimum_gap=0)
+        self.do_triangulation(tri, limit=4000)
+        tri.write_obj('dgm5.obj', affine=True)
+
+    def do_triangulation(self, tri, limit=100):
         repeat = True
-        vertex_limit = 100
+        vertex_limit = limit
         error_limit = 5.0
         vertex_count = None
         while repeat:
