@@ -3,12 +3,12 @@
 
 
 import logging
-import sys
 from math import ceil
 
 import numpy as np
 import pyximport
 import rasterio
+from affine import Affine
 
 from .heap import Heap
 from .quadedge import Vertex, splice, connect, swap, make_edge, Triangle
@@ -710,15 +710,20 @@ class Triangulation:
 
         return boundary_edges
 
-    def write_obj(self, filename, affine=True):
-        if affine and self.affine:
-            coordinates = np.array([self.affine * v.pos[:2] + tuple([v.pos[2]]) for v in self.vertices])
-            v_fmt = "v %.3f %.3f %.3f"
-        else:
-            coordinates = [v.pos for v in self.vertices]
-            v_fmt = "v %i %i %.2f"
+    def write_obj(self, filename):
+        if not self.affine:
+            self.affine = Affine.identity()
+        coordinates = np.array([self.affine * v.pos[:2] + tuple([v.pos[2]]) for v in self.vertices])
+        v_fmt = "v %.3f %.3f %.3f"
         triangles = [[self.vertices.index(vertex) for vertex in triangle.vertices][::-1] for triangle in self.triangles]
+
+        texture_coordinates = coordinates[:, :2].copy()
+        texture_coordinates -= texture_coordinates.min(axis=0)
+        texture_coordinates /= texture_coordinates.ptp(axis=0)
 
         with open(filename, 'wb') as outfile:
             np.savetxt(outfile, coordinates, fmt=v_fmt)
-            np.savetxt(outfile, triangles, fmt="f %i %i %i")
+            np.savetxt(outfile, texture_coordinates, fmt="vt %.3f %.3f")
+            np.savetxt(outfile,
+                       np.dstack([triangles, triangles]).reshape(-1, 6) + 1,
+                       fmt="f %i/%i/ %i/%i/ %i/%i/")

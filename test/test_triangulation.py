@@ -57,7 +57,7 @@ class TestTriangulationRaster(unittest.TestCase):
     def test_write_obj(self):
         tri = Triangulation(self.path, minimum_gap=0)
         self.do_triangulation(tri, limit=4000)
-        tri.write_obj('dgm5.obj', affine=True)
+        tri.write_obj('dgm5.obj')
 
     def do_triangulation(self, tri, limit=100):
         repeat = True
