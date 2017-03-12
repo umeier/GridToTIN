@@ -125,45 +125,8 @@ class Triangulation:
                 for key in self.edge_dict]
 
     @property
-    def undirected_edges(self):
-        edges = set()
-        for triangle in self.triangles:
-            for edge in triangle.edges:
-                if edge not in edges and edge.sym not in edges:
-                    edges.add(edge)
-        return edges
-
-    @property
     def triangles(self):
         return list(filter(lambda x: x.id != -1, self.triangle_list))
-
-    @property
-    def edge_lines(self):
-        return
-
-    # The walking method for finding a triangle. Not used in the main code, but
-    # kept because it's pretty to look at
-    def locate(self, v):
-        e = self.base
-        while True:
-            if v == e.origin or v == e.destination or v.on_edge(e):
-                # print "Start or end of edge"
-                if not e.o_next.destination.left_of(e):
-                    # The mesh is on the right-hand side of the edge, flip it
-                    e = e.sym
-                return e
-            elif v.right_of(e):
-                # print "Flip"
-                e = e.sym
-            elif not (v.right_of(e.o_next)):
-                # print "Left of o_next, move to o_next"
-                e = e.o_next
-            elif not (v.right_of(e.d_prev)):
-                # print "Left of d_prev, move to d_prev"
-                e = e.d_prev
-            else:
-                # print "Found the triangle"
-                return e
 
     # Point location using the history graph. Much faster than the walking
     # method
@@ -309,26 +272,6 @@ class Triangulation:
         self.mark_availability(v, radius=self.minimum_gap, value=0)
         return created_triangles, deleted_triangles
 
-    def find_nearest_boundary_edge(self, vertex):
-        start_edge = self.search(Vertex(0, 0))
-        edge = start_edge.o_next
-        while not edge == start_edge:
-            if edge.is_boundary:
-                break
-            edge = edge.o_next
-        if not edge.is_boundary:
-            start_edge = edge.sym
-            edge = start_edge.o_next
-            while not edge == start_edge:
-                if edge.is_boundary:
-                    break
-                edge = edge.o_next
-
-        while (not 0 < (
-                    (vertex - edge.origin) * (
-                            edge.destination - edge.origin)) / edge.length ** 2 < 1) or not vertex.left_of(edge):
-            edge = edge.l_next
-
     def scan_triangle(self, t, interpolation_map=None, only_return_points=False):
         v0, v1, v2 = t.vertices
 
@@ -386,40 +329,6 @@ class Triangulation:
         if only_return_points:
             return points
 
-    def scan_segment(self, e, s0, s1):
-        """
-        Find the point along the selection segment of an edge that has the worst
-        discretisation error
-        :param e: edge containing the segment
-        :param s0: starting vertex of selection segment
-        :param s1: ending vertex of selection segment
-        :return: vertex at the 2D position with the worst discretisation error
-        """
-
-        a = s1 - s0
-        d = ceil(a.norm)
-
-        step = 1 / d
-
-        max_error = 0
-        worst_vertex = None
-
-        for i in range(d):
-            v = s0 + i * step * a
-            # noinspection PyUnresolvedReferences
-            x = int(round(v.x))
-            # noinspection PyUnresolvedReferences
-            y = int(round(v.y))
-
-            if self.available[y, x] == 1:
-                z_map = self.dem[y, x]
-                interpolation = e.triangle.interpolate(x, y)
-                error = abs(interpolation - z_map)
-                if error > max_error:
-                    max_error = error
-                    worst_vertex = Vertex(x, y)
-        return worst_vertex
-
     def circle_points(self, center, radius):
         circle_points = []
         y_start = (max(round(center.y - radius), self.min_y))
@@ -467,30 +376,6 @@ class Triangulation:
             cp = self.circle_points(Vertex(s[0], s[1]), radius)
             for p in cp:
                 self.available[p[1], p[0]] = value
-
-    def scan_circle(self, center, radius):
-        max_error = 0
-        worst_vertex = None
-
-        y_start = (max(round(center.y - radius), self.min_y))
-        y_end = (min(round(radius + 1 + center.y), self.max_y))
-
-        for y in range(y_start, y_end):
-            x_max = max(radius ** 2 - round(y - center.y) ** 2, 0) ** 0.5
-            x_start = int(max(round(center.x - x_max), self.min_x))
-            x_end = int(min(round(x_max + 1 + center.x), self.max_x))
-            for x in range(x_start, x_end):
-                if self.available[y, x] == 1:
-                    triangle = self.search(center).triangle
-
-                    z_map = self.dem[y, x]
-                    interpolation = triangle.interpolate(x, y)
-                    error = abs(interpolation - z_map)
-                    if error > max_error:
-                        max_error = error
-                        worst_vertex = Vertex(x, y)
-
-        return worst_vertex
 
     def insert_point(self, v, e=None):
         """
@@ -540,71 +425,6 @@ class Triangulation:
         self.triangle_list.extend(new)
         return error, len(self.vertex_dict)
 
-    def split_edge(self, e):
-        """
-        Insert a new vertex at the mid-point of the given edge
-        :param e: The edge to split
-        :return:
-        """
-        new_v = e.origin + (e.destination - e.origin) * 0.5
-        new_v.x = int(new_v.x)
-        new_v.y = int(new_v.y)
-        new_v.z = 0
-        if new_v.right_of(e):
-            e = e.sym
-        # noinspection PyTypeChecker
-        self.insert_point(new_v, e)
-
-    def worst_encroached_edge(self):
-        """
-        :return: The longest encroached edge and the encroaching vertex
-        """
-        while True:
-            max_length = 0
-            worst_edge = None
-            encroaching_vertex = None
-            for e in self.undirected_edges:
-                encroaching_vertex_candidate = None
-                if e.is_boundary or e.sym.is_boundary:
-                    p = e.o_next.destination
-                    q = e.o_prev.destination
-                    if p.encroaches(e):
-                        encroaching_vertex_candidate = p
-                    elif q.encroaches(e):
-                        encroaching_vertex_candidate = q
-
-                    if encroaching_vertex_candidate is not None:
-                        if e.length > max_length:
-                            max_length = e.length
-                            worst_edge = e
-                            encroaching_vertex = encroaching_vertex_candidate
-
-            if worst_edge is None:
-                logging.debug("No more encroached edges")
-                return None, None
-            else:
-                return worst_edge, encroaching_vertex
-
-    def split_all_encroached_edges(self):
-        """
-        For all boundary edges, check if they are encroached. Split the longest
-        encroached boundary edge and repeat until no more boundary edges are
-        encroached
-        """
-        while True:
-            worst_edge, v = self.worst_encroached_edge()
-            if worst_edge is None:
-                break
-            else:
-                s0, s1 = worst_edge.selection_segment(v)
-                split = self.scan_segment(worst_edge, s0, s1)
-                if split:
-                    logging.debug("Splitting edge {}".format(worst_edge))
-                    self.insert_point(split)
-                else:
-                    logging.debug("Edge {} not splitted: no point found.".format(worst_edge))
-                    break
-
     def interpolated_map(self):
         """
         The height map resulting from linear interpolation of the triangle
@@ -624,91 +444,6 @@ class Triangulation:
         """
         error_map = self.dem.copy() - self.interpolated_map()
         return error_map
-
-    def bad_triangles(self, b=2 ** 0.5, ):
-        """
-        Find all triangles with a circumradius-to-shortest-edge ratio smaller
-        than b
-        :param b: Threshold, sqrt(2) by default
-        :return: A list of all bad triangles, or None if no bad triangles exist
-        """
-        bad_triangles = [triangle for triangle in self.triangles
-                         if (triangle.radius_edge_ratio > b)]
-        if len(bad_triangles) == 0:
-            return None
-        else:
-            bad_triangles.sort(key=lambda x: x.radius_edge_ratio)
-            return bad_triangles
-
-    def fix_worst_triangle(self, worst_triangle=None, use_selection_disk=False):
-        """
-        Find the worst triangle (in terms of circumradius-to-shortest-edge
-        ratio) and try to insert its off-center. If the off-center would
-        encroach a boundary edge, split that edge instead of inserting the
-        off-center
-        :param worst_triangle: Optionally provide the triangle that should be
-                               split instead of finding the worst triangle
-        :param use_selection_disk: to do
-        :return:
-        """
-        if worst_triangle is None:
-            bad_triangles = self.bad_triangles()
-            if len(bad_triangles) == 0:
-                logging.debug("No bad triangle found")
-                return None
-            else:
-                worst_triangle = bad_triangles[0]
-
-        logging.debug("Fixing bad triangle {}".format(worst_triangle))
-        if use_selection_disk:
-            c, r = worst_triangle.selection_disk()
-            v = self.scan_circle(c, r)
-        else:
-            v = worst_triangle.offcenter()
-
-        v.x = int(v.x)
-        v.y = int(v.y)
-
-        logging.debug("Trying to insert off-center {}".format(v))
-        encroachment = False
-        for e in self.boundary_edges():
-            if v.encroaches(e):
-                encroachment = True
-                logging.debug("Off-center would encroach {}".format(e) +
-                              ", splitting edge instead")
-                self.split_edge(e)
-
-        if not encroachment:
-            logging.debug("Inserting off-center")
-            self.insert_point(v)
-
-    def fix_all_bad_triangles(self, use_selection_disk=False):
-        """
-        While there are still bad triangles, insert Steiner points and split
-        encroached edges
-        """
-        bad_triangles = self.bad_triangles()
-        while bad_triangles is not None:
-            worst_triangle = bad_triangles[0]
-            self.fix_worst_triangle(worst_triangle, use_selection_disk)
-            self.split_all_encroached_edges()
-            bad_triangles = self.bad_triangles()
-        logging.debug("No bad triangles")
-
-    def boundary_edges(self):
-        """
-        :return: List of all edges on the domain boundary
-        """
-        edges = list(self.undirected_edges)
-        boundary_edges = []
-
-        for e in edges:
-            if e.is_boundary:
-                boundary_edges.append(e)
-            elif e.sym.is_boundary:
-                boundary_edges.append(e.sym)
-
-        return boundary_edges
 
     def write_obj(self, filename):
         if not self.affine:

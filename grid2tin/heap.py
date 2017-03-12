@@ -42,10 +42,6 @@ class Heap:
         self.del_max()
         return maximum
 
-    def dump(self):
-        print(zip([self.keys[self.pq[i]] for i in range(1, self.N + 1)],
-                  [self.elements[self.pq[i]] for i in range(1, self.N + 1)]))
-
     def less(self, i, j):
         return self.keys[self.pq[i]] < self.keys[self.pq[j]]
 
@@ -71,15 +67,6 @@ class Heap:
 
         self.qp[self.pq[i]] = i
         self.qp[self.pq[j]] = j
-
-    def update(self, i, key):
-        index = self.qp[i]
-        self.keys[self.pq[self.qp[i]]] = key
-        self.swim(index)
-        self.sink(index)
-
-    def contains(self, i):
-        return not i == -1 and not self.qp[i] == -1
 
     def delete(self, i):
         index = self.qp[i]
